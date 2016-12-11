@@ -59,6 +59,14 @@ game.state.add('play', {
       collisionSprites.push(invisibleWall);
     }
 
+    var darknessSquare = game.add.bitmapData(100, 100);
+    darknessSquare.ctx.fillStyle = '#362d10';
+    darknessSquare.ctx.fillRect(0, 0, 100, 100);
+    game.add.sprite(650, 1000, darknessSquare);
+    game.add.sprite(1350, 1000, darknessSquare);
+    game.add.sprite(1000, 650, darknessSquare);
+    game.add.sprite(1000, 1350, darknessSquare);
+
     cursors = game.input.keyboard.createCursorKeys();
   },
 
@@ -101,5 +109,13 @@ game.state.add('play', {
         if (sprite != otherSprite)
           this.physics.arcade.collide(collisionSprites[sprite],
                                       collisionSprites[otherSprite]);
+
+    if (frog.sprite.body.x < 700 ||
+        frog.sprite.body.y < 700 ||
+        frog.sprite.body.x >= 1400 ||
+        frog.sprite.body.y >= 1400) {
+      frog.sprite.body.x = frog.sprite.body.x % 700 + 700;
+      frog.sprite.body.y = frog.sprite.body.y % 700 + 700;
+    }
   }
 }, true);
