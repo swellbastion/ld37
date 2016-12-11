@@ -2,8 +2,10 @@
 
 var game = new Phaser.Game(700, 700);
 
-var frog, cursors;
+var frog, cursors, stats;
 var collisionSprites = [];
+var currentRoom = [0, 0];
+var roomsExplored = [currentRoom.toString()];
 
 game.state.add('play', {
   init: function() {
@@ -67,6 +69,11 @@ game.state.add('play', {
     game.add.sprite(1000, 650, darknessSquare);
     game.add.sprite(1000, 1350, darknessSquare);
 
+    stats = game.add.text(0, 0, 'hi', {
+      font: '20px monospace',
+      fill: '#b7b4ae',
+      backgroundColor: 'black'});
+
     cursors = game.input.keyboard.createCursorKeys();
   },
 
@@ -110,12 +117,31 @@ game.state.add('play', {
           this.physics.arcade.collide(collisionSprites[sprite],
                                       collisionSprites[otherSprite]);
 
-    if (frog.sprite.body.x < 700 ||
-        frog.sprite.body.y < 700 ||
-        frog.sprite.body.x >= 1400 ||
-        frog.sprite.body.y >= 1400) {
-      frog.sprite.body.x = frog.sprite.body.x % 700 + 700;
-      frog.sprite.body.y = frog.sprite.body.y % 700 + 700;
+    if (frog.sprite.body.x < 700) {
+      currentRoom[0]--;
+      switchRoom();
     }
+    else if (frog.sprite.body.y < 700 ) {
+      currentRoom[1]--;
+      switchRoom();
+    }
+    else if (frog.sprite.body.x >= 1400) {
+      currentRoom[0]++;
+      switchRoom();
+    }
+    else if (frog.sprite.body.y >= 1400) {
+      currentRoom[1]++;
+      switchRoom();
+    }
+
+    stats.text = 'current room: ' + currentRoom[0] + ',' + currentRoom[1] + '\nrooms explored: ' + roomsExplored.length;
+    stats.x = frog.sprite.body.x - 300;
+    stats.y = frog.sprite.body.y - 300;
   }
 }, true);
+
+function switchRoom() {
+  if (roomsExplored.indexOf(currentRoom.toString()) == -1) roomsExplored.push(currentRoom.toString());
+  frog.sprite.body.x = frog.sprite.body.x % 700 + 700;
+  frog.sprite.body.y = frog.sprite.body.y % 700 + 700;
+}
