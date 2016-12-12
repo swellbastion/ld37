@@ -4,39 +4,41 @@ var game = new Phaser.Game(700, 700);
 
 var frog, cursors, stats;
 var collisionSprites = [];
+var enemies = [];
 var currentRoom = [0, 0];
 var roomsExplored = [currentRoom.toString()];
+var topGroup;
 
 game.state.add('play', {
   init: function() {
-    this.physics.startSystem(Phaser.Physics.ARCADE);
-    this.game.world.setBounds(0, 0, 2100, 2100);
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+    game.world.setBounds(0, 0, 2100, 2100);
   },
 
   preload: function() {
-    this.load.image('bookShelf', 'images/book_shelf.png');
-    this.load.image('bullet', 'images/bullet.png');
-    this.load.image('lamp', 'images/lamp.png');
-    this.load.image('piano', 'images/piano.png');
-    this.load.image('room', 'images/room.png');
-    this.load.spritesheet('bug', 'images/bug.png', 40, 40);
-    this.load.spritesheet('frog', 'images/frog.png', 40, 40);
-    this.load.spritesheet('soldier', 'images/soldier.png', 40, 40);
-    this.load.audio('backgroundMusic', 'sounds/background_music.mp3');
-    this.load.audio('shoot', 'sounds/shoot.mp3');
-    this.load.audio('die', 'sounds/die.mp3');
+    game.load.image('bookShelf', 'images/book_shelf.png');
+    game.load.image('bullet', 'images/bullet.png');
+    game.load.image('lamp', 'images/lamp.png');
+    game.load.image('piano', 'images/piano.png');
+    game.load.image('room', 'images/room.png');
+    game.load.spritesheet('bug', 'images/bug.png', 40, 40);
+    game.load.spritesheet('frog', 'images/frog.png', 40, 40);
+    game.load.spritesheet('soldier', 'images/soldier.png', 40, 40);
+    game.load.audio('backgroundMusic', 'sounds/background_music.mp3');
+    game.load.audio('shoot', 'sounds/shoot.mp3');
+    game.load.audio('die', 'sounds/die.mp3');
   },
 
   create: function() {
-    this.background = this.add.tileSprite(0, 0, 2100, 2100, 'room');
+    game.background = game.add.tileSprite(0, 0, 2100, 2100, 'room');
 
     frog = {direction: 'up', sprite: {}};
-    frog.sprite = this.add.sprite(1050, 1270, 'frog');
+    frog.sprite = game.add.sprite(1050, 1270, 'frog');
     frog.sprite.anchor.set(.5, .5);
-    this.camera.follow(frog.sprite);
+    game.camera.follow(frog.sprite);
     frog.sprite.animations.add('run');
     frog.sprite.animations.play('run', 10, true);
-    this.physics.enable(frog.sprite);
+    game.physics.enable(frog.sprite);
     collisionSprites.push(frog.sprite);
 
     var invisibleWallCoords = [
@@ -50,29 +52,32 @@ game.state.add('play', {
       [1090, 1310, 220, 300]
     ];
     for (var i = 0; i < invisibleWallCoords.length; i++) {
-      var invisibleWall = this.add.sprite(
+      var invisibleWall = game.add.sprite(
         invisibleWallCoords[i][0],
         invisibleWallCoords[i][1]
       );
-      this.physics.enable(invisibleWall);
+      game.physics.enable(invisibleWall);
       invisibleWall.width = invisibleWallCoords[i][2];
       invisibleWall.height = invisibleWallCoords[i][3];
       invisibleWall.body.immovable = true;
       collisionSprites.push(invisibleWall);
     }
 
+    topGroup = game.add.group();
+
     var darknessSquare = game.add.bitmapData(100, 100);
     darknessSquare.ctx.fillStyle = '#362d10';
     darknessSquare.ctx.fillRect(0, 0, 100, 100);
-    game.add.sprite(650, 1000, darknessSquare);
-    game.add.sprite(1350, 1000, darknessSquare);
-    game.add.sprite(1000, 650, darknessSquare);
-    game.add.sprite(1000, 1350, darknessSquare);
+    topGroup.add(game.add.sprite(650, 1000, darknessSquare));
+    topGroup.add(game.add.sprite(1350, 1000, darknessSquare));
+    topGroup.add(game.add.sprite(1000, 650, darknessSquare));
+    topGroup.add(game.add.sprite(1000, 1350, darknessSquare));
 
     stats = game.add.text(0, 0, 'hi', {
       font: '20px monospace',
       fill: '#b7b4ae',
       backgroundColor: 'black'});
+    topGroup.add(stats);
 
     cursors = game.input.keyboard.createCursorKeys();
   },
@@ -114,7 +119,7 @@ game.state.add('play', {
     for (var sprite = 0; sprite < collisionSprites.length; sprite++)
       for (var otherSprite = 0; otherSprite < collisionSprites.length; otherSprite++)
         if (sprite != otherSprite)
-          this.physics.arcade.collide(collisionSprites[sprite],
+          game.physics.arcade.collide(collisionSprites[sprite],
                                       collisionSprites[otherSprite]);
 
     if (frog.sprite.body.x < 700) {
@@ -134,14 +139,43 @@ game.state.add('play', {
       switchRoom();
     }
 
+    for (var i = 0; i < enemies.length; i++)
+      game.physics.arcade.moveToObject(enemies[i], frog.sprite, 70);
+
     stats.text = 'current room: ' + currentRoom[0] + ',' + currentRoom[1] + '\nrooms explored: ' + roomsExplored.length;
     stats.x = frog.sprite.body.x - 300;
     stats.y = frog.sprite.body.y - 300;
+
+    game.world.bringToTop(topGroup);
   }
 }, true);
 
 function switchRoom() {
+  for (var i = 0; i < enemies.length; i++) {
+    enemies[i].destroy();
+  }
+  for (var i = 0; i < collisionSprites.length; i++)
+    if (collisionSprites[i].key == 'bug') {
+      collisionSprites.splice(i, 1);
+      i--;
+    }
+  enemies = [];
+  var difficulty = Math.abs(currentRoom[0]) + Math.abs(currentRoom[1]);
+  for (var i = 0; i < difficulty; i++) spawnBug();
   if (roomsExplored.indexOf(currentRoom.toString()) == -1) roomsExplored.push(currentRoom.toString());
   frog.sprite.body.x = frog.sprite.body.x % 700 + 700;
   frog.sprite.body.y = frog.sprite.body.y % 700 + 700;
+}
+
+function getEnemyPosition() {
+  return Math.floor(Math.random() * 11) * 40 + 830;
+}
+
+function spawnBug() {
+  var bug = game.add.sprite(getEnemyPosition(), getEnemyPosition(), 'bug');
+  bug.animations.add('run');
+  bug.animations.play('run', 5, true);
+  game.physics.enable(bug);
+  enemies.push(bug);
+  collisionSprites.push(bug)
 }
