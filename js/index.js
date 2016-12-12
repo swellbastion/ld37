@@ -2,12 +2,11 @@
 
 var game = new Phaser.Game(700, 700);
 
-var frog, cursors, stats;
+var frog, cursors, stats, topGroup, health, dieSound;
 var collisionSprites = [];
 var enemies = [];
 var currentRoom = [0, 0];
 var roomsExplored = [currentRoom.toString()];
-var topGroup;
 
 game.state.add('play', {
   init: function() {
@@ -40,7 +39,13 @@ game.state.add('play', {
     frog.sprite.animations.play('run', 10, true);
     game.physics.enable(frog.sprite);
     collisionSprites.push(frog.sprite);
+    var backgroundMusic = game.add.audio('backgroundMusic');
+    backgroundMusic.loop = true;
+    backgroundMusic.play();
+    dieSound = game.add.audio('die');
+    dieSound.volume = .25;
 
+    health = 3;
     var invisibleWallCoords = [
       [790, 490, 220, 300],
       [490, 790, 300, 220],
@@ -73,7 +78,7 @@ game.state.add('play', {
     topGroup.add(game.add.sprite(1000, 650, darknessSquare));
     topGroup.add(game.add.sprite(1000, 1350, darknessSquare));
 
-    stats = game.add.text(0, 0, 'hi', {
+    stats = game.add.text(0, 0, '', {
       font: '20px monospace',
       fill: '#b7b4ae',
       backgroundColor: 'black'});
@@ -116,6 +121,37 @@ game.state.add('play', {
         frog.sprite.body.velocity.x = 150;
     }
 
+    for (var i = 0; i < enemies.length; i++) {
+      if (game.physics.arcade.overlap(enemies[i], frog.sprite) &&
+          !frog.invincible) {
+
+        frog.sprite.tint = 0xff0000;
+        frog.invincible = true;
+        health--;
+        dieSound.play();
+        game.time.events.add(1000, function() {
+          frog.sprite.tint = 0xffffff;
+          frog.invincible = false;
+        });
+        if (health < 1) {
+          var gameOverText = game.add.text(frog.sprite.body.x,
+            frog.sprite.body.y,
+            'ur dead\n\nrooms explored:' + roomsExplored.length,
+            {
+              font: '40px monospace',
+              fill: '#b7b4ae',
+              backgroundColor: 'black'
+            }
+          );
+          gameOverText.anchor.set(.5, .5)
+          game.paused = true;
+          setTimeout(function() { location.reload(); }, 3000);
+        }
+        break;
+      }
+      game.physics.arcade.moveToObject(enemies[i], frog.sprite, 70);
+    }
+
     for (var sprite = 0; sprite < collisionSprites.length; sprite++)
       for (var otherSprite = 0; otherSprite < collisionSprites.length; otherSprite++)
         if (sprite != otherSprite)
@@ -139,14 +175,13 @@ game.state.add('play', {
       switchRoom();
     }
 
-    for (var i = 0; i < enemies.length; i++)
-      game.physics.arcade.moveToObject(enemies[i], frog.sprite, 70);
-
-    stats.text = 'current room: ' + currentRoom[0] + ',' + currentRoom[1] + '\nrooms explored: ' + roomsExplored.length;
+    stats.text = 'current room: ' + currentRoom[0] + ',' + currentRoom[1] + '\nrooms explored: ' + roomsExplored.length + '\nhealth: ';
+    for (var i = 0; i < health; i++) stats.text += '❤'
     stats.x = frog.sprite.body.x - 300;
     stats.y = frog.sprite.body.y - 300;
 
     game.world.bringToTop(topGroup);
+    if (gameOverText) game.world.bringToTop(gameOverText);
   }
 }, true);
 
