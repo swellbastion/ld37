@@ -1,6 +1,6 @@
 'use strict';
 
-var game = new Phaser.Game(700, 700);
+var game = new Phaser.Game(700, 700, Phaser.AUTO, 'game');
 
 var frog, cursors, stats, topGroup, health, dieSound, shootSound;
 var collisionSprites = [];
@@ -119,6 +119,7 @@ game.state.add('play', {
     topGroup.add(stats);
 
     cursors = game.input.keyboard.createCursorKeys();
+    game.input.keyboard.addKeyCapture(Phaser.Keyboard.SPACEBAR);
   },
 
   update: function() {
