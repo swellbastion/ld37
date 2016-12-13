@@ -48,6 +48,28 @@ game.state.add('play', {
     game.add.sprite(1610, 870, 'piano');
     game.add.sprite(910, 1570, 'piano');
     game.add.sprite(1610, 1570, 'piano');
+    var bookShelf = game.add.sprite(1150, 1110, 'bookShelf');
+    game.physics.arcade.enable(bookShelf);
+    bookShelf.body.immovable = true;
+    collisionSprites.push(bookShelf);
+    game.add.sprite(1130, 1094, 'lamp');
+
+    game.add.sprite(1150+700, 1110, 'bookShelf');
+    game.add.sprite(1130+700, 1094, 'lamp');
+    game.add.sprite(1150, 1110+700, 'bookShelf');
+    game.add.sprite(1130, 1094+700, 'lamp');
+    game.add.sprite(1150+700, 1110+700, 'bookShelf');
+    game.add.sprite(1130+700, 1094+700, 'lamp');
+    game.add.sprite(1150-700, 1110, 'bookShelf');
+    game.add.sprite(1130-700, 1094, 'lamp');
+    game.add.sprite(1150, 1110-700, 'bookShelf');
+    game.add.sprite(1130, 1094-700, 'lamp');
+    game.add.sprite(1150-700, 1110-700, 'bookShelf');
+    game.add.sprite(1130-700, 1094-700, 'lamp');
+    game.add.sprite(1150-700, 1110+700, 'bookShelf');
+    game.add.sprite(1130-700, 1094+700, 'lamp');
+    game.add.sprite(1150+700, 1110-700, 'bookShelf');
+    game.add.sprite(1130+700, 1094-700, 'lamp');
 
     var backgroundMusic = game.add.audio('backgroundMusic');
     backgroundMusic.loop = true;
