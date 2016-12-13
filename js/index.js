@@ -2,7 +2,7 @@
 
 var game = new Phaser.Game(700, 700);
 
-var frog, cursors, stats, topGroup, health, dieSound;
+var frog, cursors, stats, topGroup, health, dieSound, shootSound;
 var collisionSprites = [];
 var enemies = [];
 var currentRoom = [0, 0];
@@ -32,7 +32,7 @@ game.state.add('play', {
   create: function() {
     game.background = game.add.tileSprite(0, 0, 2100, 2100, 'room');
 
-    frog = {direction: 'up', sprite: {}};
+    frog = {direction: 'up', sprite: {}, lastShootTime: 0};
     frog.sprite = game.add.sprite(1050, 1270, 'frog');
     frog.sprite.anchor.set(.5, .5);
     game.camera.follow(frog.sprite);
@@ -76,6 +76,8 @@ game.state.add('play', {
     backgroundMusic.play();
     dieSound = game.add.audio('die');
     dieSound.volume = .25;
+    shootSound = game.add.audio('shoot');
+    shootSound.volume = .25;
 
     health = 3;
     var invisibleWallCoords = [
@@ -151,7 +153,10 @@ game.state.add('play', {
         break;
       case 'right':
         frog.sprite.body.velocity.x = 150;
+        break;
     }
+
+    checkSpacebar();
 
     for (var i = 0; i < enemies.length; i++) {
       if (game.physics.arcade.overlap(enemies[i], frog.sprite) &&
@@ -235,6 +240,11 @@ function switchRoom() {
       collisionSprites.splice(i, 1);
       i--;
     }
+    else if (collisionSprites[i].key == 'bullet') {
+      collisionSprites[i].destroy();
+      collisionSprites.splice(i, 1);
+      i--;
+    }
   enemies = [];
   var difficulty = Math.abs(currentRoom[0]) + Math.abs(currentRoom[1]);
   for (var i = 0; i < difficulty; i++) spawnBug();
@@ -261,5 +271,36 @@ function spawnBug() {
   bug.animations.play('run', 5, true);
   game.physics.enable(bug);
   enemies.push(bug);
-  collisionSprites.push(bug)
+  collisionSprites.push(bug);
+}
+
+function checkSpacebar() {
+  if (
+    game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR) &&
+    frog.lastShootTime + 700 < game.time.time
+  ){
+    switch (frog.direction) {
+      case 'up':
+        var bulletData = {position: [frog.sprite.body.position.x, frog.sprite.body.position.y-50], direction: [0, -1]};
+        break;
+      case 'down':
+        var bulletData = {position: [frog.sprite.body.position.x, frog.sprite.body.position.y+50], direction: [0, 1]};
+        break;
+      case 'left':
+        var bulletData = {position: [frog.sprite.body.position.x-50, frog.sprite.body.position.y], direction: [-1, 0]};
+        break;
+      case 'right':
+        var bulletData = {position: [frog.sprite.body.position.x+50, frog.sprite.body.position.y], direction: [1, 0]};
+        break;
+    }
+    var bullet = game.add.sprite(bulletData.position[0], bulletData.position[1], 'bullet');
+    game.physics.enable(bullet);
+    bullet.body.mass = 4.06;
+    var bulletSpeed = 400;
+    bullet.body.velocity.x = bulletData.direction[0] * bulletSpeed;
+    bullet.body.velocity.y = bulletData.direction[1] * bulletSpeed;
+    collisionSprites.push(bullet);
+    frog.lastShootTime = game.time.time;
+    shootSound.play();
+  }
 }
