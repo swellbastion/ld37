@@ -7,6 +7,7 @@ var collisionSprites = [];
 var enemies = [];
 var currentRoom = [0, 0];
 var roomsExplored = [currentRoom.toString()];
+var heart;
 
 game.state.add('play', {
   init: function() {
@@ -39,6 +40,15 @@ game.state.add('play', {
     frog.sprite.animations.play('run', 10, true);
     game.physics.enable(frog.sprite);
     collisionSprites.push(frog.sprite);
+
+    var piano = game.add.sprite(910, 870, 'piano');
+    game.physics.arcade.enable(piano);
+    piano.body.immovable = true;
+    collisionSprites.push(piano);
+    game.add.sprite(1610, 870, 'piano');
+    game.add.sprite(910, 1570, 'piano');
+    game.add.sprite(1610, 1570, 'piano');
+
     var backgroundMusic = game.add.audio('backgroundMusic');
     backgroundMusic.loop = true;
     backgroundMusic.play();
@@ -175,6 +185,15 @@ game.state.add('play', {
       switchRoom();
     }
 
+    if (
+      heart &&
+      Phaser.Rectangle.intersects(frog.sprite.getBounds(), heart.getBounds())
+    ) {
+      heart.destroy();
+      heart = null;
+      if (health < 3) health++;
+    }
+
     stats.text = 'current room: ' + currentRoom[0] + ',' + currentRoom[1] + '\nrooms explored: ' + roomsExplored.length + '\nhealth: ';
     for (var i = 0; i < health; i++) stats.text += '❤'
     stats.x = frog.sprite.body.x - 300;
@@ -200,14 +219,22 @@ function switchRoom() {
   if (roomsExplored.indexOf(currentRoom.toString()) == -1) roomsExplored.push(currentRoom.toString());
   frog.sprite.body.x = frog.sprite.body.x % 700 + 700;
   frog.sprite.body.y = frog.sprite.body.y % 700 + 700;
+  if (heart) heart.destroy();
+  heart = null;
+  if (difficulty > 2 && Math.random() * 3 < 1) {
+    heart = game.add.text(getSpawnPosition(), getSpawnPosition(), '❤', {
+      font: '40px monospace',
+      fill: '#cc6e9f'});
+    game.physics.enable(heart);
+  }
 }
 
-function getEnemyPosition() {
+function getSpawnPosition() {
   return Math.floor(Math.random() * 11) * 40 + 830;
 }
 
 function spawnBug() {
-  var bug = game.add.sprite(getEnemyPosition(), getEnemyPosition(), 'bug');
+  var bug = game.add.sprite(getSpawnPosition(), getSpawnPosition(), 'bug');
   bug.animations.add('run');
   bug.animations.play('run', 5, true);
   game.physics.enable(bug);
